@@ -1,0 +1,13 @@
+{
+  "name": "stellar-402-live",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Dunia Hub workshops for payment-enabled agents on Stellar testnet",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
