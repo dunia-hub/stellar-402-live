@@ -6,7 +6,7 @@ import {
 import { x402Client, x402HTTPClient } from "@x402/fetch";
 import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
-import { readConfig } from "./config.js";
+import { readClientConfig } from "./client-config.js";
 import { discoverResource } from "./discovery.js";
 import { approvePayment } from "./payment-policy.js";
 import { verifySettlement } from "./verify-settlement.js";
@@ -14,12 +14,12 @@ import { createBudget } from "./budget.js";
 import { fileURLToPath } from "node:url";
 
 async function main() {
-  const config = readConfig();
-  const origin = `http://127.0.0.1:${config.port}`;
+  const config = readClientConfig();
+  const origin = config.serviceOrigin;
 
   const resource = await discoverResource(
     origin,
-    "business-checklist",
+    config.resourceId,
   );
 
   const url = resource.url;
