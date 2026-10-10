@@ -1,8 +1,8 @@
 # Run the Stellar Testnet Payment Flow
 
-This guide runs a local digital service that accepts a **0.01 USDC payment through x402 on Stellar testnet**.
+Run a service that accepts a **0.01 testnet USDC payment through x402**, then verify settlement and inspect the client’s persistent budget.
 
-The client validates payment terms before signing. The service uses a managed facilitator to verify and settle the payment before returning the protected resource.
+The client discovers the resource, validates payment terms, reserves funds, and signs a payment payload. The service uses a facilitator for verification and settlement. The client independently checks the resulting transfer through testnet Horizon.
 
 ## Requirements
 
@@ -11,9 +11,9 @@ The client validates payment terms before signing. The service uses a managed fa
 - Internet access
 - Testnet USDC from Circle’s faucet
 
-Run all commands from the repository root.
+Run commands from the repository root.
 
-## 1. Install and validate
+## 1. Install and Validate
 
 ```sh
 npm ci
@@ -21,9 +21,9 @@ npm run check
 npm test
 ```
 
-## 2. Create testnet wallets
+## 2. Create Testnet Accounts
 
-Confirm that the local environment file is ignored by Git:
+Confirm that credentials are ignored:
 
 ```sh
 git check-ignore .env
@@ -35,63 +35,59 @@ Expected output:
 .env
 ```
 
-Create the buyer and service recipient accounts:
+Create buyer and recipient accounts:
 
 ```sh
 npm run wallets:create
 ```
 
-The script saves credentials in `.env` with restricted file permissions, prints public keys only, and refuses to overwrite an existing file.
+The script saves credentials in `.env` with restricted permissions and prints public keys only. It refuses to overwrite an existing file.
 
-The configuration contains:
+If accounts already exist, preserve the current configuration.
+
+### Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `STELLAR_PRIVATE_KEY` | Buyer secret key used by the payment client |
-| `STELLAR_RECIPIENT` | Public key of the service’s payment recipient |
-| `STELLAR_RECIPIENT_SECRET` | Recipient secret key used during account and trustline setup |
-| `STELLAR_PORT` | Local service port, defaulting to `3001` |
+| `STELLAR_PRIVATE_KEY` | Buyer secret key used by the client |
+| `STELLAR_RECIPIENT` | Approved recipient public key |
+| `STELLAR_RECIPIENT_SECRET` | Recipient secret key used during account setup |
+| `STELLAR_PORT` | Local service port; defaults to `3001` |
+| `STELLAR_SERVICE_ORIGIN` | Optional client target; defaults to the local service |
+| `STELLAR_RESOURCE_ID` | Optional resource identifier; defaults to `business-checklist` |
 
-The service itself requires only the recipient public key. Keep secret keys out of commits, screenshots, and logs.
+The running service needs only the recipient public key. Do not share secret keys or commit `.env`.
 
-If `.env` already exists, inspect it locally rather than generating replacement accounts:
-
-```sh
-code .env
-```
-
-## 3. Fund accounts and create USDC trustlines
+## 3. Fund Accounts and Create Trustlines
 
 ```sh
 npm run wallets:setup
 ```
 
-The setup script:
+The script:
 
 1. Checks whether each account exists.
-2. Funds missing accounts with testnet XLM through Friendbot.
-3. Creates a USDC trustline for each account if one is missing.
-4. Prints public keys and submitted transaction hashes.
+2. Funds missing accounts with testnet XLM through Stellar Friendbot.
+3. Creates missing USDC trustlines.
+4. Prints public keys and transaction hashes.
 
-Existing accounts and trustlines are preserved when the script is rerun.
+Existing accounts and trustlines are preserved on subsequent runs.
 
-Testnet XLM covers account reserves and applicable network fees. It does not provide the USDC needed to purchase the resource.
+Friendbot supplies XLM for account reserves and applicable network fees. It does not supply USDC.
 
-## 4. Fund the buyer with testnet USDC
+## 4. Fund the Buyer with Testnet USDC
 
-Open [Circle’s faucet](https://faucet.circle.com).
+Open [Circle’s faucet](https://faucet.circle.com), select **Stellar Testnet**, and enter the buyer public key.
 
-Select **Stellar Testnet** and enter the buyer public key printed by the wallet setup script.
-
-The USDC asset used by this project has the following testnet issuer:
+The project uses USDC issued by:
 
 ```text
 GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
 ```
 
-Both accounts need the trustline, but only the buyer needs faucet USDC to initiate the payment.
+Both accounts need USDC trustlines. Only the buyer needs faucet USDC to purchase the resource.
 
-## 5. Start the service
+## 5. Start the Service
 
 In the first terminal:
 
@@ -99,98 +95,196 @@ In the first terminal:
 npm run start:stellar
 ```
 
-The service listens on:
+The default origin is:
 
 ```text
 http://127.0.0.1:3001
 ```
 
-If `STELLAR_PORT` is configured differently, the service and client use that port.
-
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /health` | Returns service health information |
-| `GET /resource` | Requests the payment-protected resource |
+| `GET /health` | HTTP service health |
+| `GET /.well-known/stellar-402.json` | Public service manifest |
+| `GET /resource` | Payment-protected resource |
 
-The health endpoint confirms that the HTTP service is running. It does not establish facilitator availability or successful payment settlement.
+The health response does not establish facilitator availability or successful settlement.
 
-## 6. Request and pay for the resource
+## 6. Inspect Discovery
 
-In a second terminal, from the repository root:
+In a second terminal:
+
+```sh
+curl -fsS http://127.0.0.1:3001/.well-known/stellar-402.json
+```
+
+The manifest advertises the `business-checklist` resource at `/resource`.
+
+Discovery cannot approve a recipient, change payment limits, or expand the client’s budget.
+
+## 7. Complete the Payment
 
 ```sh
 npm run pay:stellar
 ```
 
+Each successful invocation purchases access again.
+
 The client:
 
-1. Requests `/resource` without payment.
-2. Receives an HTTP `402 Payment Required` response.
-3. Reads the x402 payment requirements.
-4. Checks the scheme, network, asset, recipient, and amount.
-5. Creates a signed payment payload for an approved option.
-6. Submits one paid request.
-7. Requires HTTP `200` and successful testnet settlement evidence.
-8. Prints the settlement transaction hash and unlocked resource.
+1. Fetches and validates the service manifest.
+2. Selects the configured resource.
+3. Requests it without payment.
+4. Receives HTTP 402 payment requirements.
+5. Checks the scheme, network, asset, recipient, and amount.
+6. Reserves funds in the persistent budget.
+7. Creates a signed payment payload.
+8. Submits one paid request.
+9. Checks successful settlement evidence.
+10. Records the settlement hash.
+11. Independently verifies the transfer through Horizon.
+12. Marks the reservation settled.
+13. Displays the resource.
 
-The payment policy permits:
-
-| Payment term | Allowed value |
-| --- | --- |
-| Scheme | `exact` |
-| Network | `stellar:testnet` |
-| Asset | The configured testnet USDC asset contract |
-| Recipient | The public key configured in `STELLAR_RECIPIENT` |
-| Maximum amount | `0.01 USDC` per client run |
-
-Stellar USDC uses seven decimal places. Therefore, `100000` atomic units represent `0.01 USDC`.
-
-## Expected output
-
-Public keys and transaction hashes vary between runs.
+Expected output includes:
 
 ```text
+Discovered resource: Small-business planning checklist
 Unpaid request: HTTP 402
 Policy approved:
-  Buyer: G...
-  Recipient: G...
-  USDC atomic units: 100000
+...
+Budget reservation: ...
+Remaining budget atomic units: ...
 Submitting one signed payment request.
 Paid request: HTTP 200
 Settlement transaction: ...
+Ledger verification passed: ledger ...
+Budget reservation settled.
 Unlocked resource:
-{"resource":"/resource","content":{"title":"Small-business planning checklist","items":["Identify the customer need","Estimate delivery costs","Set a spending budget"]}}
+...
 ```
 
-Each successful invocation purchases access again. The per-payment limit does not impose a cumulative budget across separate runs.
+Identifiers and ledger numbers vary between runs.
 
-## Run the local simulation
+## Payment Permissions
 
-The introductory demo requires no wallet, testnet funds, or network access:
+| Term | Allowed Value |
+| --- | --- |
+| Scheme | `exact` |
+| Network | `stellar:testnet` |
+| Asset | Approved testnet USDC asset contract |
+| Recipient | Configured `STELLAR_RECIPIENT` |
+| Per-payment ceiling | 0.01 USDC |
+| Persistent total budget | 1 USDC per buyer |
+
+Stellar USDC uses seven decimal places:
+
+- `100000` atomic units = 0.01 USDC.
+- `10000000` atomic units = 1 USDC.
+
+## 8. Inspect the Budget
+
+```sh
+npm run budget:status
+```
+
+The budget records pending and settled payments under:
+
+```text
+.local/budget-BUYER_PUBLIC_KEY.json
+```
+
+The file is ignored by Git.
+
+Both statuses count against the limit. Settling a reservation does not restore spent funds.
+
+The budget persists across runs and is shared across service targets for the same buyer. It starts tracking when the budgeted client is first used; it does not import earlier wallet activity.
+
+Do not delete or edit the budget file to bypass the limit.
+
+## 9. Verify an Existing Payment
+
+Replace `TRANSACTION_HASH` with the hash printed by the client:
+
+```sh
+npm run verify:stellar -- TRANSACTION_HASH
+```
+
+This command does not spend funds.
+
+It independently checks:
+
+- The expected network.
+- Transaction success.
+- The USDC issuer.
+- Buyer and recipient accounts.
+- The exact amount.
+- Matching debit and credit under the same operation.
+
+The standalone command expects 0.01 USDC. The paying client verifies the amount approved from its payment challenge.
+
+The verifier accepts one matching USDC transfer per transaction and rejects potentially incomplete effect pages.
+
+## 10. Reconcile Pending Payments
+
+```sh
+npm run budget:reconcile
+```
+
+The command sends no payments.
+
+| Pending Record | Result |
+| --- | --- |
+| Recorded hash verifies successfully | Reservation becomes settled |
+| Recorded hash cannot be verified | Reservation remains pending |
+| No recorded hash | Reservation remains unresolved |
+
+Funds remain allocated in every case. Reconciliation does not automatically refund reservations.
+
+The current reservation records do not store the original recipient. Reconciliation uses the currently configured buyer and recipient, so preserve the original payment configuration when recovering pending payments.
+
+## Target Another Service
+
+Configure an approved service and resource in `.env`:
+
+```dotenv
+STELLAR_SERVICE_ORIGIN=https://builder.example
+STELLAR_RESOURCE_ID=market-report
+STELLAR_RECIPIENT=THE_BUILDERS_VALID_STELLAR_PUBLIC_KEY
+```
+
+These are illustrative placeholders.
+
+Remote origins require HTTPS. Local loopback origins may use HTTP for development.
+
+Confirm the recipient separately from the manifest. Preserve the buyer credentials and existing budget.
+
+The default server binds to loopback. Access from another computer requires an appropriate deployment.
+
+## Run the Local Simulation
 
 ```sh
 npm run demo
 ```
 
-It demonstrates an HTTP 402 challenge, payment-term validation, simulated receipt consumption, and replay rejection.
+The simulation requires no wallet or network access. It uses a separate educational challenge and receipt mechanism.
 
-The simulation uses its own challenge and receipt mechanism. Its replay tests do not establish replay protection for the live x402 integration.
+Its replay tests do not establish replay protection for the live x402 integration.
 
 ## Troubleshooting
 
-### Network requests time out
+### Network Requests Time Out
 
-The wallet setup, Stellar service, and payment client commands include:
+Network commands include:
 
 ```text
 --network-family-autoselection-attempt-timeout=5000
 ```
 
-This longer connection-attempt window resolved the timeout encountered during the initial account setup. Other network failures may require separate diagnosis.
+This longer connection-attempt window resolved the timeout encountered during initial setup. Other failures may require separate diagnosis.
 
-### Wallet creation reports that `.env` already exists
+### `.env` Already Exists
 
-The script deliberately refuses to overwrite credentials.
+Wallet creation deliberately refuses to overwrite credentials.
 
 Inspect the existing file locally:
 
@@ -198,49 +292,64 @@ Inspect the existing file locally:
 code .env
 ```
 
-Preserve the accounts already created unless you intentionally want to replace them.
+### The Buyer Has XLM but Cannot Pay
 
-### The buyer has XLM but cannot pay in USDC
+Check that the buyer has a USDC trustline and a positive balance from Circle’s Stellar Testnet faucet.
 
-XLM and USDC are separate assets.
+### Discovery Fails
 
-Confirm that the buyer has:
+Check the configured origin, advertised resource identifier, and manifest response.
 
-- A trustline for the documented testnet USDC issuer.
-- A positive USDC balance from Circle’s Stellar Testnet faucet.
+Restart the service after changing server code.
 
-### A payment request times out or fails
+### The Budget Refuses Payment
 
-A timeout does not prove that settlement failed.
+Inspect:
 
-Check the service output and available transaction or account history before running the client again. The client does not automatically retry a signed payment request.
+```sh
+npm run budget:status
+```
 
-### The payment policy refuses the challenge
+Pending payments reduce available funds alongside completed spending.
 
-Check that the service is requesting:
+### A Budget Lock Remains
 
-- The `exact` scheme.
-- Stellar testnet.
-- The approved testnet USDC asset.
-- The configured recipient.
-- A positive amount no greater than `0.01 USDC`.
+A leftover lock blocks updates. Do not remove it while another process may be updating the budget.
 
-Do not remove validation checks to bypass a refusal.
+Recovery procedures for interrupted updates remain follow-up work.
 
-## Current boundaries
+### Submission Times Out
 
-- The implementation is restricted to Stellar testnet.
-- Verification and settlement depend on the configured facilitator.
-- The client enforces a per-payment ceiling.
-- A persistent session budget is not implemented.
-- The client checks facilitator settlement evidence.
-- Independent ledger reconciliation is not implemented.
-- Live signed-payload replay behavior has not yet been tested in this repository.
-- No model provider is required for the deterministic client.
+A timeout does not prove payment failed.
+
+Inspect service output and available transaction evidence before rerunning the client. The client does not automatically retry signed requests.
+
+### Verification Fails After HTTP 200
+
+Settlement may already have completed.
+
+If its hash was recorded, run:
+
+```sh
+npm run budget:reconcile
+```
+
+Do not submit another payment simply because independent verification failed.
+
+## Current Boundaries
+
+- Settlement depends on the configured facilitator.
+- Independent verification confirms transfer evidence, not binding to a new request.
+- Live signed-payload replay behavior remains untested in this repository.
+- Recovery requires a recorded settlement hash.
+- Reservations do not yet preserve complete original payment context.
+- The budget is a local client control, not a wallet-wide spending restriction.
+- Discovery targets one configured service at a time.
+- Independent-builder demonstrations and fresh-environment workshop rehearsal remain follow-up work.
 
 ## References
 
-- [Stellar x402 quickstart](https://developers.stellar.org/docs/build/agentic-payments/x402/quickstart-guide)
-- [Circle testnet faucet](https://faucet.circle.com)
-- [Recorded testnet evidence](testnet-evidence.md)
-- [Delivery roadmap](roadmap.md)
+- [Stellar x402 Quickstart](https://developers.stellar.org/docs/build/agentic-payments/x402/quickstart-guide)
+- [Circle Testnet Faucet](https://faucet.circle.com)
+- [Payment Evidence](testnet-evidence.md)
+- [Delivery Roadmap](roadmap.md)

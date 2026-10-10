@@ -2,79 +2,57 @@
 
 **Build AI agents that discover services, pay on Stellar, and unlock access.**
 
-Stellar 402 Live is a five-day hybrid builder program by [Dunia Hub](https://duniahub.xyz), bringing together four online workshops and an in-person finale.
+Stellar 402 Live is a five-day hybrid builder program by [Dunia Hub](https://duniahub.xyz), combining four online workshops with an in-person finale.
 
-Participants build AI agents and payment-enabled digital services, then connect their projects into a small marketplace on Stellar testnet.
-
-The program starts with a practical question: **what happens when an agent can request a service and pay for it too?**
+Participants begin with a practical need, build payment-enabled digital services, and connect their projects into a small marketplace on Stellar testnet.
 
 ## What We Are Building
 
-A marketplace where AI agents can discover and use services created by different builders.
+An agent requests a useful resource. The service responds with HTTP `402 Payment Required`. The client evaluates the payment terms, authorizes a payment within its spending limits, and receives the resource after settlement.
 
-A service might provide a fraud check, a design template, an educational resource, or information that helps a small business make a decision.
-
-When an agent requests a paid resource, the service returns an HTTP `402 Payment Required` response. The client checks the payment terms against its spending policy, creates a signed payment payload, and retries the request. The service uses an x402 facilitator to verify and settle the payment before returning the resource.
-
-Participants are encouraged to begin with a clearly identified need. Possible areas include:
-
-- Small-business tools
-- Cross-border payment information
-- Agriculture and market information
-- Fraud detection
-- Local-language services
-- Education
-- Digital creator tools
+Services could provide educational resources, creator templates, small-business tools, fraud checks, or market information. Builders are encouraged to identify the intended user and practical value before choosing an implementation.
 
 ## Working Foundation
 
-The repository currently includes:
+The repository includes:
 
 - A local HTTP 402 simulation with receipt expiry and replay rejection.
 - A Stellar x402 service accepting testnet USDC.
-- Testnet wallet creation, XLM funding, and USDC trustline setup.
-- A deterministic client that validates payment terms before signing.
-- A successful manual 0.01 USDC testnet payment that unlocked a protected resource.
-- 22 automated tests.
-- GitHub Actions for syntax checks, tests, and the local demo.
+- Testnet account creation, XLM funding, and USDC trustline setup.
+- A public service manifest and validated resource discovery.
+- Configurable service origins and resource identifiers.
+- Payment checks for scheme, network, asset, recipient, and amount.
+- A persistent spending budget shared across service targets for each buyer.
+- Independent settlement verification through testnet Horizon.
+- Reconciliation of pending payments with recorded settlement hashes.
+- Workshop exercises and a finale demonstration guide.
+- Automated tests and GitHub Actions validation.
 
-Service discovery, persistent session budgets, and optional model integration are planned development stages.
+The paying client is deterministic. A model provider is not required.
 
-## How the Live Payment Flow Works
+## How the Payment Flow Works
 
-1. **Request:** The client requests a protected resource.
-2. **Challenge:** The service returns HTTP 402 with x402 payment requirements.
-3. **Authorize:** The client checks the scheme, network, asset, recipient, and amount.
-4. **Sign:** The client creates a signed payment payload for an approved option.
-5. **Settle:** The service delegates verification and settlement to the configured facilitator.
-6. **Unlock:** The service returns the resource, and the client checks the settlement response.
+1. **Discover:** Read the configured service’s public manifest.
+2. **Request:** Ask for the advertised resource.
+3. **Validate:** Check the HTTP 402 payment requirements.
+4. **Reserve:** Allocate funds from the persistent budget.
+5. **Sign:** Create a payment payload for an approved option.
+6. **Settle:** Submit the paid request through the service’s x402 integration.
+7. **Verify:** Check settlement evidence against independent ledger data.
+8. **Record:** Mark the budget reservation settled.
+9. **Display:** Show the returned resource.
 
-The current client permits payments of up to **0.01 testnet USDC per run** to the configured recipient.
-
-HTTP 402 is the response status. The live integration uses the x402 packages to handle payment requirements, signed payloads, and settlement responses.
+The service delegates payment verification and settlement to its configured facilitator. The client separately checks the resulting transfer through Horizon before reporting success.
 
 ## Program Structure
 
-| Session | Focus | Builder Outcome |
+| Session | Focus | Deliverable |
 | --- | --- | --- |
-| 01 · Digital Services and HTTP 402 | Define a practical need, build a service, and introduce payment challenges | A protected resource with clear payment terms |
-| 02 · Stellar Testnet Payments | Set up accounts, fund them, and complete the x402 payment flow | A resource unlocked after testnet settlement |
-| 03 · Agents and Spending Policies | Validate payment terms and enforce spending permissions | A client that accepts permitted payments and refuses prohibited ones |
-| 04 · Service Discovery | Publish service information and connect builder projects | An agent that discovers and uses another participant’s service |
-| 05 · In-Person Finale | Demonstrate the connected marketplace | A cross-project showcase with testnet payment evidence |
-
-## Learning Outcomes
-
-By the end of the program, participants should be able to:
-
-- Build a digital service around a practical use case.
-- Explain how HTTP 402 fits into a payment-enabled request flow.
-- Complete a payment-enabled request on Stellar testnet.
-- Validate payment terms before authorizing spending.
-- Explain the roles of the client, service, and facilitator.
-- Test successful access and rejected payment requests.
-- Publish service information that other builders can discover.
-- Demonstrate an agent using another participant’s service.
+| [01 · Digital Services and HTTP 402](workshops/01-service/README.md) | Build a useful resource and inspect payment challenges | A working local simulation |
+| [02 · Stellar Testnet Payments](workshops/02-stellar-payments/README.md) | Configure accounts and complete a verified payment | Testnet settlement and resource access |
+| [03 · Agent Spending Policies](workshops/03-agent-policy/README.md) | Apply payment permissions and persistent budgets | Allowed payments and demonstrated refusals |
+| [04 · Service Discovery](workshops/04-discovery/README.md) | Validate manifests and target another service | Discovery with existing payment controls |
+| [05 · Marketplace Finale](workshops/05-finale/README.md) | Bring builder projects together | A demonstration with payment evidence |
 
 ## Getting Started
 
@@ -84,7 +62,7 @@ By the end of the program, participants should be able to:
 - npm
 - Git
 
-Core examples use free tooling. A paid model API is not required.
+Network access and testnet funds are needed for the live Stellar flow. Core exercises do not require paid model APIs.
 
 ### Install
 
@@ -94,7 +72,7 @@ cd stellar-402-live
 npm ci
 ```
 
-### Validate the Project
+### Validate
 
 ```sh
 npm run check
@@ -107,77 +85,173 @@ npm test
 npm run demo
 ```
 
-The simulation requires no wallets, testnet funds, or network access. It demonstrates payment-term validation, resource access, and simulated receipt replay rejection.
+This example requires no wallets, funds, or network access. It demonstrates payment-term validation, simulated resource access, and receipt replay rejection.
 
-### Run the Stellar Testnet Flow
+The simulation uses a separate educational protocol. Its replay tests do not establish replay protection for the live x402 integration.
 
-Follow the [testnet payment guide](docs/testnet-payments.md) to create accounts, fund the buyer, and configure USDC trustlines.
+## Run the Stellar Testnet Flow
 
-Start the service:
+### Create and Configure Accounts
+
+Confirm that credentials are ignored:
+
+```sh
+git check-ignore .env
+```
+
+Create the buyer and recipient:
+
+```sh
+npm run wallets:create
+```
+
+Fund their accounts with testnet XLM and create USDC trustlines:
+
+```sh
+npm run wallets:setup
+```
+
+Wallet creation refuses to overwrite an existing `.env`. Preserve your existing configuration if accounts have already been created.
+
+Fund the buyer with testnet USDC through [Circle’s faucet](https://faucet.circle.com), selecting **Stellar Testnet**.
+
+### Start the Service
+
+In the first terminal:
 
 ```sh
 npm run start:stellar
 ```
 
-In a second terminal:
+### Run the Paying Client
+
+In a second terminal, from the repository root:
 
 ```sh
 npm run pay:stellar
 ```
 
-A successful run returns HTTP 200, prints a settlement transaction hash, and displays the protected resource.
+Each successful run makes a new payment of **0.01 testnet USDC**.
 
-See the [recorded testnet evidence](docs/testnet-evidence.md) for the successful integration run.
+Expected output includes:
+
+```text
+Discovered resource: Small-business planning checklist
+Unpaid request: HTTP 402
+Policy approved:
+...
+Budget reservation: ...
+Submitting one signed payment request.
+Paid request: HTTP 200
+Settlement transaction: ...
+Ledger verification passed: ledger ...
+Budget reservation settled.
+Unlocked resource:
+...
+```
+
+See the [testnet payment guide](docs/testnet-payments.md) for account setup and troubleshooting, and the [payment evidence](docs/testnet-evidence.md) for recorded runs.
+
+## Spending Controls
+
+| Control | Default |
+| --- | --- |
+| Network | Stellar testnet |
+| Asset | Approved testnet USDC |
+| Recipient | Explicitly configured public key |
+| Per-payment ceiling | 0.01 USDC |
+| Persistent total budget | 1 USDC per buyer |
+
+Pending and settled payments both count against the total budget. Restarting the client does not reset recorded spending.
+
+Inspect the budget:
+
+```sh
+npm run budget:status
+```
+
+The budget is stored locally under `.local/`, which is ignored by Git. It controls spending through this client; it does not restrict other applications using the same wallet.
+
+## Verify and Reconcile Payments
+
+Verify an existing 0.01 USDC payment by replacing `TRANSACTION_HASH` with its settlement hash:
+
+```sh
+npm run verify:stellar -- TRANSACTION_HASH
+```
+
+The verifier checks the network, transaction success, USDC issuer, buyer, recipient, exact amount, and matching debit and credit under one operation.
+
+Reconcile pending reservations:
+
+```sh
+npm run budget:reconcile
+```
+
+This command submits no payments. Reservations with recorded hashes are independently verified before being marked settled.
+
+Reservations without hashes, or whose verification fails, remain allocated.
+
+## Target Another Service
+
+The client defaults to the local service. Optional configuration selects a different origin and resource:
+
+```dotenv
+STELLAR_SERVICE_ORIGIN=https://builder.example
+STELLAR_RESOURCE_ID=market-report
+STELLAR_RECIPIENT=THE_BUILDERS_VALID_STELLAR_PUBLIC_KEY
+```
+
+These values are illustrative placeholders.
+
+Remote origins require HTTPS. Local loopback origins may use HTTP for development.
+
+Recipient approval remains separate from the service manifest. Discovery cannot change payment permissions or increase the budget.
+
+The default server binds to loopback. A service intended for access from another computer needs an appropriate deployment.
 
 ## Repository Structure
 
 | Path | Contents |
 | --- | --- |
-| `src/` | Local simulation service, client, and payment policy |
-| `src/stellar/` | Stellar x402 service, client, configuration, and payment policy |
-| `scripts/` | Testnet wallet creation, funding, and trustline setup |
-| `test/` | Simulation, configuration, and payment-policy tests |
-| `docs/` | Setup guide, payment evidence, and delivery roadmap |
-| `workshops/` | Four online session guides and the finale guide |
-| `.github/workflows/` | Automated validation |
-| `.env.example` | Environment configuration template |
+| `src/` | Local simulation service, client, and policy |
+| `src/stellar/` | Live service, client, discovery, verification, budgets, and reconciliation |
+| `scripts/` | Account setup, payment verification, and budget commands |
+| `test/` | Automated tests |
+| `docs/` | Setup instructions, evidence, and roadmap |
+| `workshops/` | Exercises and finale guide |
+| `.github/workflows/` | Continuous integration |
+| `.env.example` | Configuration template |
 
 ## Payment Safety
 
-Payment authorization happens before signing.
-
-The client permits only the configured recipient, Stellar testnet, the approved USDC asset, and an amount within its per-payment ceiling. Model output must not override these permissions.
-
-The live service depends on its configured facilitator for payment verification and settlement. The client requires successful testnet settlement evidence before reporting success.
-
-Throughout the program:
-
-- Use testnet funds.
-- Keep private keys in ignored local configuration.
+- Use testnet accounts and funds.
+- Keep secret keys in ignored local configuration.
 - Keep credentials out of commits, screenshots, and logs.
-- Preserve payment checks when troubleshooting.
-- Check uncertain payment outcomes before attempting another payment.
-- Clearly identify simulated behavior.
+- Validate payment terms before signing.
+- Preserve pending reservations when outcomes are uncertain.
+- Check settlement evidence before attempting another payment.
+- Keep model suggestions separate from payment authority.
+
+A failed or timed-out request does not prove that settlement failed. The client does not automatically retry signed payment requests.
 
 ## Current Boundaries
 
-The successful testnet run establishes a working payment-enabled resource flow. Further work remains:
-
-- A persistent session budget is not implemented.
-- Independent ledger reconciliation is not implemented.
+- Discovery targets one configured service at a time.
+- Cross-builder deployment and payment demonstrations still require rehearsal.
 - Live signed-payload replay behavior has not yet been tested in this repository.
-- Service discovery is not implemented.
-- The paying client is deterministic; model integration is optional future work.
+- Transfer verification does not establish binding to a new resource request.
+- Pending-payment recovery requires a recorded settlement hash.
+- The ledger verifier accepts one matching USDC transfer per transaction.
+- Budget enforcement depends on preserving the local state.
+- Model integration is not implemented.
+- The complete workshop sequence still needs a fresh-environment rehearsal.
 
-The local simulation has replay tests, but those tests do not establish replay protection for the live x402 integration.
-
-See the [delivery roadmap](docs/roadmap.md) for planned work and acceptance criteria.
+See the [delivery roadmap](docs/roadmap.md) for remaining work.
 
 ## Contributing
 
-Contributions to code, documentation, exercises, and practical service examples are welcome.
-
-Keep changes focused, document their behavior, and include relevant tests.
+Keep changes focused, document resulting behavior, and include meaningful tests.
 
 Before committing:
 
@@ -187,21 +261,21 @@ npm test
 git diff --check
 ```
 
-Use commit messages that describe the completed change:
+Use clear commit messages:
 
 ```text
-docs: add workshop exercises
 feat: validate service manifests
-test: reject payments above the session budget
+test: reject payments above the remaining budget
+docs: explain pending-payment recovery
 ```
 
-When proposing a service example, explain the need it addresses, the resource it provides, and how another builder can run it.
+Service examples should explain their intended users, practical value, and setup requirements.
 
 ## About Dunia Hub
 
 Dunia Hub creates practical learning experiences around AI, blockchain, and open-source development.
 
-Stellar 402 Live brings these areas together through a shared builder experience: identify a need, create a useful service, and demonstrate how an agent can discover and pay for it.
+Stellar 402 Live brings these areas together: identify a need, build a useful service, and demonstrate how an agent can discover and pay for it.
 
 [Visit Dunia Hub](https://duniahub.xyz)
 
