@@ -11,6 +11,14 @@
     "test": "node --test",
     "start": "node src/server.js",
     "demo": "node src/demo.js",
-    "check": "node --check src/policy.js && node --check src/service.js && node --check src/demo.js && node --check src/server.js"
+    "check": "node --check src/policy.js && node --check src/service.js && node --check src/demo.js && node --check src/server.js && node --check src/stellar/config.js && node --check src/stellar/server.js",
+    "start:stellar": "node --env-file=.env src/stellar/server.js"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "17.2.1",
+    "@x402/core": "2.28.0",
+    "@x402/express": "2.28.0",
+    "@x402/stellar": "2.28.0",
+    "express": "5.3.0"
   }
 }
