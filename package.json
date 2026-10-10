@@ -8,6 +8,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "start": "node src/server.js",
+    "demo": "node src/demo.js",
+    "check": "node --check src/policy.js && node --check src/service.js && node --check src/demo.js && node --check src/server.js"
   }
 }
