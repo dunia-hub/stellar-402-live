@@ -73,7 +73,15 @@ async function main() {
     limitAtomic: "10000000",
   });
 
-  const reservation = budget.reserve(approved.accepts[0].amount);
+  const reservation = budget.reserve(
+    approved.accepts[0].amount,
+    {
+      network: approved.accepts[0].network,
+      asset: approved.accepts[0].asset,
+      buyer: signer.address,
+      recipient: approved.accepts[0].payTo,
+    },
+  );
 
   console.log(`Budget reservation: ${reservation}`);
   console.log(
