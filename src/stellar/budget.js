@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import { validatePaymentContext } from "./payment-context.js";
 
 function amount(value) {
   if (typeof value !== "string" || !/^(0|[1-9]\d*)$/.test(value)) {
@@ -29,7 +30,7 @@ export function createBudget({
 
   function validate(state) {
     if (
-      state.version !== 1 ||
+      state.version !== 2 ||
       state.limitAtomic !== limitAtomic ||
       !Array.isArray(state.payments)
     ) {
@@ -49,6 +50,10 @@ export function createBudget({
         (payment.status === "settled" && payment.hash === null)
       ) {
         throw new Error("Invalid payment record");
+      }
+
+      if (payment.context !== null) {
+        validatePaymentContext(payment.context);
       }
 
       ids.add(payment.id);
@@ -86,7 +91,23 @@ export function createBudget({
     try {
       const state = existsSync(path)
         ? JSON.parse(readFileSync(path, "utf8"))
-        : { version: 1, limitAtomic, payments: [] };
+        : { version: 2, limitAtomic, payments: [] };
+
+      if (state.version === 1) {
+        if (
+          state.limitAtomic !== limitAtomic ||
+          !Array.isArray(state.payments)
+        ) {
+          throw new Error("Invalid legacy budget state");
+        }
+
+        state.payments = state.payments.map((payment) => ({
+          ...payment,
+          context: null,
+        }));
+
+        state.version = 2;
+      }
 
       validate(state);
       const result = change(state);
@@ -120,7 +141,8 @@ export function createBudget({
   }
 
   return {
-    reserve(amountAtomic) {
+    reserve(amountAtomic, context) {
+      const approvedContext = validatePaymentContext(context);
       const requested = amount(amountAtomic);
 
       if (requested <= 0n) {
@@ -141,6 +163,7 @@ export function createBudget({
           amountAtomic,
           status: "pending",
           hash: null,
+          context: approvedContext,
         });
 
         return id;

@@ -1,9 +1,9 @@
 import { verifySettlement } from "./verify-settlement.js";
+import { validatePaymentContext } from "./payment-context.js";
 
 export async function reconcileBudget({
   budget,
   buyer,
-  recipient,
   verify = verifySettlement,
 }) {
   const payments = budget.snapshot().payments;
@@ -12,25 +12,40 @@ export async function reconcileBudget({
   for (const payment of payments) {
     if (payment.status !== "pending") continue;
 
-    if (payment.hash === null) {
+    if (payment.context === null) {
       results.push({
         id: payment.id,
         status: "unresolved",
-        reason: "No settlement hash recorded; funds remain reserved",
+        reason: "Legacy reservation lacks payment context; funds remain reserved",
       });
       continue;
     }
 
     try {
+      const context = validatePaymentContext(payment.context);
+
+      if (context.buyer !== buyer) {
+        throw new Error("Reservation belongs to a different buyer");
+      }
+
+      if (payment.hash === null) {
+        results.push({
+          id: payment.id,
+          status: "unresolved",
+          reason: "No settlement hash recorded; funds remain reserved",
+        });
+        continue;
+      }
+
       const verified = await verify(payment.hash, {
-        buyer,
-        recipient,
+        buyer: context.buyer,
+        recipient: context.recipient,
         amountAtomic: payment.amountAtomic,
       });
 
       if (
         verified.hash !== payment.hash ||
-        verified.network !== "stellar:testnet" ||
+        verified.network !== context.network ||
         verified.amountAtomic !== payment.amountAtomic
       ) {
         throw new Error("Verification result does not match reservation");

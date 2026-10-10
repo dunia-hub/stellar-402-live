@@ -1,11 +1,9 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import { fileURLToPath } from "node:url";
 import { createBudget } from "../src/stellar/budget.js";
-import { readConfig } from "../src/stellar/config.js";
 import { reconcileBudget } from "../src/stellar/reconcile-budget.js";
 
 try {
-  const config = readConfig();
 
   const buyer = Keypair.fromSecret(
     process.env.STELLAR_PRIVATE_KEY,
@@ -22,7 +20,6 @@ try {
   const results = await reconcileBudget({
     budget,
     buyer,
-    recipient: config.recipient,
   });
 
   if (results.length === 0) {
