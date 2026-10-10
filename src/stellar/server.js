@@ -3,11 +3,17 @@ import { paymentMiddlewareFromConfig } from "@x402/express";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { readConfig } from "./config.js";
+import { createManifest } from "./discovery.js";
 
 const config = readConfig();
 const app = express();
 
 app.disable("x-powered-by");
+
+app.get("/.well-known/stellar-402.json", (_request, response) => {
+  response.set("Cache-Control", "no-store");
+  response.json(createManifest());
+});
 
 app.get("/health", (_request, response) => {
   response.json({

@@ -7,6 +7,7 @@ import { x402Client, x402HTTPClient } from "@x402/fetch";
 import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
 import { readConfig } from "./config.js";
+import { discoverResource } from "./discovery.js";
 import { approvePayment } from "./payment-policy.js";
 import { verifySettlement } from "./verify-settlement.js";
 import { createBudget } from "./budget.js";
@@ -14,7 +15,15 @@ import { fileURLToPath } from "node:url";
 
 async function main() {
   const config = readConfig();
-  const url = `http://127.0.0.1:${config.port}/resource`;
+  const origin = `http://127.0.0.1:${config.port}`;
+
+  const resource = await discoverResource(
+    origin,
+    "business-checklist",
+  );
+
+  const url = resource.url;
+  console.log(`Discovered resource: ${resource.name}`);
 
   if (!process.env.STELLAR_PRIVATE_KEY) {
     throw new Error("STELLAR_PRIVATE_KEY is required");
