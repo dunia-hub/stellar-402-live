@@ -11,12 +11,13 @@
     "test": "node --test",
     "start": "node src/server.js",
     "demo": "node src/demo.js",
-    "check": "node --check src/policy.js && node --check src/service.js && node --check src/demo.js && node --check src/server.js && node --check src/stellar/config.js && node --check src/stellar/server.js && node --check scripts/create-testnet-wallets.js && node --check scripts/setup-testnet-wallets.js && node --check src/stellar/payment-policy.js && node --check src/stellar/client.js && node --check src/stellar/verify-settlement.js && node --check scripts/verify-testnet-payment.js",
+    "check": "node --check src/policy.js && node --check src/service.js && node --check src/demo.js && node --check src/server.js && node --check src/stellar/config.js && node --check src/stellar/server.js && node --check scripts/create-testnet-wallets.js && node --check scripts/setup-testnet-wallets.js && node --check src/stellar/payment-policy.js && node --check src/stellar/client.js && node --check src/stellar/verify-settlement.js && node --check scripts/verify-testnet-payment.js && node --check src/stellar/budget.js && node --check scripts/payment-budget-status.js",
     "start:stellar": "node --network-family-autoselection-attempt-timeout=5000 --env-file=.env src/stellar/server.js",
     "wallets:create": "node scripts/create-testnet-wallets.js",
     "wallets:setup": "node --network-family-autoselection-attempt-timeout=5000 --env-file=.env scripts/setup-testnet-wallets.js",
     "pay:stellar": "node --network-family-autoselection-attempt-timeout=5000 --env-file=.env src/stellar/client.js",
-    "verify:stellar": "node --network-family-autoselection-attempt-timeout=5000 --env-file=.env scripts/verify-testnet-payment.js"
+    "verify:stellar": "node --network-family-autoselection-attempt-timeout=5000 --env-file=.env scripts/verify-testnet-payment.js",
+    "budget:status": "node --env-file=.env scripts/payment-budget-status.js"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.2.1",
