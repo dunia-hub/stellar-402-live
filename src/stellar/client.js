@@ -9,6 +9,8 @@ import { ExactStellarScheme } from "@x402/stellar/exact/client";
 import { readConfig } from "./config.js";
 import { approvePayment } from "./payment-policy.js";
 import { verifySettlement } from "./verify-settlement.js";
+import { createBudget } from "./budget.js";
+import { fileURLToPath } from "node:url";
 
 async function main() {
   const config = readConfig();
@@ -53,6 +55,21 @@ async function main() {
   console.log(`  Buyer: ${signer.address}`);
   console.log(`  Recipient: ${config.recipient}`);
   console.log(`  USDC atomic units: ${approved.accepts[0].amount}`);
+
+  const budget = createBudget({
+    path: fileURLToPath(new URL(
+      `../../.local/budget-${signer.address}.json`,
+      import.meta.url,
+    )),
+    limitAtomic: "10000000",
+  });
+
+  const reservation = budget.reserve(approved.accepts[0].amount);
+
+  console.log(`Budget reservation: ${reservation}`);
+  console.log(
+    `Remaining budget atomic units: ${budget.snapshot().remainingAtomic}`,
+  );
 
   let payload = await client.createPaymentPayload(approved);
 
@@ -111,6 +128,8 @@ async function main() {
     throw new Error("Response lacks successful testnet settlement evidence");
   }
 
+  budget.recordSettlement(reservation, settlement.transaction);
+
   console.log(`Settlement transaction: ${settlement.transaction}`);
 
   const verified = await verifySettlement(settlement.transaction, {
@@ -119,7 +138,10 @@ async function main() {
     amountAtomic: approved.accepts[0].amount,
   });
 
+  budget.settle(reservation);
+
   console.log(`Ledger verification passed: ledger ${verified.ledger}`);
+  console.log("Budget reservation settled.");
   console.log("Unlocked resource:");
   console.log(body);
 }
@@ -127,7 +149,7 @@ async function main() {
 main().catch((error) => {
   console.error("Payment client failed:", error.message);
   console.error(
-    "No automatic retry was attempted. A timeout does not prove payment failed.",
+    "No automatic retry was attempted. Any reserved budget remains allocated until the payment outcome is reconciled.",
   );
   process.exitCode = 1;
 });
