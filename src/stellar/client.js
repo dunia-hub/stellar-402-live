@@ -8,6 +8,7 @@ import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
 import { readConfig } from "./config.js";
 import { approvePayment } from "./payment-policy.js";
+import { verifySettlement } from "./verify-settlement.js";
 
 async function main() {
   const config = readConfig();
@@ -111,6 +112,14 @@ async function main() {
   }
 
   console.log(`Settlement transaction: ${settlement.transaction}`);
+
+  const verified = await verifySettlement(settlement.transaction, {
+    buyer: signer.address,
+    recipient: config.recipient,
+    amountAtomic: approved.accepts[0].amount,
+  });
+
+  console.log(`Ledger verification passed: ledger ${verified.ledger}`);
   console.log("Unlocked resource:");
   console.log(body);
 }
