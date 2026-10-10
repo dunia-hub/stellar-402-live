@@ -1,137 +1,170 @@
 # Delivery Roadmap
 
-The foundation supports a local HTTP 402 simulation and a working Stellar testnet x402 payment flow. The next stages strengthen payment handling, connect services across builders, and prepare the workshop materials.
+Stellar 402 Live now supports resource discovery, policy-controlled testnet payments, persistent spending budgets, independent ledger verification, and limited pending-payment recovery.
+
+The next stages validate failure behavior, connect independent builder projects, and rehearse the workshop experience.
 
 ## Completed Foundation
 
-- [x] Repository overview and five session guides.
-- [x] Local HTTP 402 service and deterministic client.
+- [x] Local HTTP 402 service and deterministic demo.
 - [x] Simulated receipt expiry and replay rejection.
+- [x] Stellar x402 service accepting testnet USDC.
+- [x] Testnet wallet creation, XLM funding, and USDC trustline setup.
+- [x] Payment validation for scheme, network, asset, recipient, and amount.
+- [x] Successful manual testnet payments and protected resource access.
+- [x] Independent settlement verification through testnet Horizon.
+- [x] Persistent budget with reservations before signing.
+- [x] Settlement records preserved across client runs.
+- [x] Reconciliation for pending payments with recorded hashes.
+- [x] Public service manifest and validated resource discovery.
+- [x] Configurable service origins and resource identifiers.
+- [x] Five workshop guides with exercises and expected results.
 - [x] GitHub Actions for syntax checks, tests, and the local demo.
-- [x] Stellar x402 testnet service.
-- [x] Testnet wallet creation and XLM funding.
-- [x] USDC trustline setup for buyer and recipient.
-- [x] Client validation of scheme, network, asset, recipient, and amount.
-- [x] Successful manual 0.01 USDC payment that unlocked a protected resource.
-- [x] Testnet setup guide and recorded payment evidence.
 
-The automated suite currently contains 22 passing tests. The live testnet payment was validated through a separate manual integration run.
+Completed implementation does not imply that every failure path or workshop exercise has been validated live.
 
-## 1. Strengthen Live Payment Verification
-
-Confirm the behavior of the complete payment flow beyond the successful demonstration.
+## 1. Validate Live Payment Failure Behavior
 
 ### Tasks
 
-- [ ] Independently reconcile settlement evidence against ledger data.
-- [ ] Check transaction success and the expected asset, recipient, and amount.
 - [ ] Test reused signed payment payloads against the live integration.
-- [ ] Test facilitator rejection and settlement failure paths.
-- [ ] Define how the client handles uncertain payment outcomes.
-- [ ] Add an integration test harness using controlled facilitator responses.
-- [ ] Keep live payments outside routine CI.
+- [ ] Test facilitator rejection and settlement failures.
+- [ ] Test delayed ledger availability after settlement.
+- [ ] Test interruption before and after recording a settlement hash.
+- [ ] Document the observed outcome of each failure case.
+- [ ] Add controlled integration tests without spending funds in CI.
 
 ### Acceptance Criteria
 
-- Settlement evidence is checked against independent ledger data.
-- Invalid payment evidence cannot be reported as a successful payment.
-- Replay behavior is tested and documented.
-- A timeout does not trigger an automatic second payment.
-- Automated tests cover rejection and failure paths without spending funds.
+- Replay behavior is demonstrated and documented.
+- Failed resource access is distinguished from failed settlement.
+- Uncertain outcomes do not trigger automatic duplicate payments.
+- Pending reservations remain allocated until evidence establishes their outcome.
+- Automated integration tests cover the client’s payment sequence and failure handling.
 
-## 2. Add Session Spending Budgets
-
-Extend the current per-payment ceiling into a budget shared across requests.
+## 2. Strengthen Budget and Recovery Guarantees
 
 ### Tasks
 
-- [ ] Define an explicit session budget.
-- [ ] Reserve budget before authorizing a payment.
-- [ ] Count pending payments against the available budget.
-- [ ] Prevent concurrent requests from exceeding the budget.
-- [ ] Persist budget state across client restarts.
-- [ ] Reconcile uncertain outcomes before releasing reserved funds.
-- [ ] Test budget exhaustion, concurrent requests, and restart recovery.
+- [ ] Bind reservations to immutable payment context, including network, asset, buyer, and recipient.
+- [ ] Store sufficient payment identity before submission to support interruption recovery.
+- [ ] Define recovery for reservations without a settlement hash.
+- [ ] Add multiprocess tests for concurrent reservations.
+- [ ] Test interruption during persistent-state updates.
+- [ ] Document safe handling of leftover locks.
+- [ ] Define an explicit budget lifecycle and renewal process.
 
 ### Acceptance Criteria
 
-- Authorized payments cannot exceed the configured session budget.
-- Concurrent requests cannot allocate the same available funds.
-- Restarting the client does not reset recorded spending.
-- Uncertain payments remain reserved until their outcome is established.
-- Payment permissions remain outside model control.
+- Reconciliation uses the original reservation’s payment context.
+- Changed client configuration cannot reinterpret a pending payment.
+- Concurrent processes cannot allocate more than the configured budget.
+- Corrupt or uncertain state blocks spending rather than resetting the budget.
+- Budget renewal is explicit and preserves historical records.
+- Missing transaction evidence is not treated as proof that funds were unspent.
 
-## 3. Connect Services Through Discovery
-
-Allow agents to find and use services built by other participants.
+## 3. Demonstrate Cross-Builder Integration
 
 ### Tasks
 
-- [ ] Define a service manifest schema.
-- [ ] Describe resource identifiers, endpoints, and supported payment methods.
-- [ ] Validate manifests and permitted endpoint URLs.
-- [ ] Add a discovery client.
-- [ ] Check current payment requirements before authorizing payment.
-- [ ] Connect two independently run builder projects.
-- [ ] Test malformed manifests, unavailable services, and changed payment terms.
+- [ ] Rehearse the second-local-service exercise.
+- [ ] Deploy a builder service at a reachable HTTPS origin.
+- [ ] Connect another builder’s client to that service.
+- [ ] Confirm the recipient through a channel separate from discovery.
+- [ ] Complete a payment and independent ledger verification.
+- [ ] Record the participating projects, configuration, and transaction evidence.
+- [ ] Demonstrate a refused request across the integration.
 
 ### Acceptance Criteria
 
-- Another builder can publish a compatible service manifest.
-- An agent can discover and request that builder’s resource.
-- Discovery cannot expand the agent’s payment permissions.
-- Unapproved endpoints and payment terms are rejected.
-- A cross-project demonstration completes a verified testnet payment.
+- Independently operated projects complete the payment-enabled resource flow.
+- Discovery remains within the configured origin.
+- Payment permissions remain explicitly configured.
+- The buyer’s budget is shared across service targets.
+- Documentation distinguishes local instances from independent-builder demonstrations.
 
-## 4. Prepare Workshop Materials
-
-Turn the working foundation into exercises participants can complete.
+## 4. Rehearse the Workshops
 
 ### Tasks
 
-- [ ] Expand each session guide with setup instructions and exercises.
-- [ ] Add solutions and expected outputs.
-- [ ] Add facilitator notes and troubleshooting guidance.
-- [ ] Map exercises to the tested repository examples.
-- [ ] Provide an optional free or local model integration.
-- [ ] Keep the deterministic client available for all core exercises.
-- [ ] Rehearse the program with fresh participant environments.
+- [ ] Run every guide from a fresh checkout.
+- [ ] Verify commands and expected outputs.
+- [ ] Test account setup with newly created testnet wallets.
+- [ ] Confirm faucet and trustline instructions.
+- [ ] Rehearse policy refusal and temporary budget exhaustion.
+- [ ] Rehearse discovery and missing-resource refusal.
+- [ ] Add facilitator notes based on observed difficulties.
+- [ ] Prepare session quizzes and participant feedback prompts.
 
 ### Acceptance Criteria
 
-- Each workshop has a clear starting point and deliverable.
-- Commands and examples work from a fresh checkout.
-- Participants can complete the payment flow without a paid model API.
-- Exercises demonstrate both successful payments and policy refusals.
-- Facilitators can diagnose common setup and connection problems.
+- Participants can complete the core exercises with free tooling.
+- No paid model API is required.
+- Every session has a clear starting point and deliverable.
+- Examples distinguish simulated receipts from live settlement.
+- Troubleshooting instructions reflect reproduced problems.
+- The complete sequence has been rehearsed in a fresh environment.
 
-## 5. Prepare the Marketplace Finale
-
-Bring independently built projects together into a shared demonstration.
+## 5. Add Optional Model-Assisted Service Selection
 
 ### Tasks
 
-- [ ] Publish a project submission checklist.
-- [ ] Publish a demonstration sequence and evidence requirements.
-- [ ] Rehearse an agent using another builder’s service.
+- [ ] Define a narrow role for a free or local model.
+- [ ] Allow the model to suggest a resource from validated service information.
+- [ ] Validate model output before using it.
+- [ ] Keep origin, recipient, asset, network, and budgets outside model control.
+- [ ] Preserve the deterministic client as the default fallback.
+- [ ] Test attempts to override payment permissions.
+
+### Acceptance Criteria
+
+- Model output cannot expand spending authority.
+- Invalid suggestions are rejected before signing.
+- Participants can complete the program without a model.
+- The implementation clearly separates service selection from payment authorization.
+
+## 6. Prepare the Marketplace Finale
+
+### Tasks
+
+- [ ] Collect participant repositories and service manifests.
+- [ ] Rehearse a cross-builder demonstration.
+- [ ] Confirm account funding and remaining budgets.
+- [ ] Collect settlement hashes and independent verification output.
 - [ ] Prepare recorded fallbacks for connectivity problems.
-- [ ] Collect participant repositories and testnet transaction evidence.
-- [ ] Document the resulting marketplace examples.
+- [ ] Review presentation materials for exposed credentials.
+- [ ] Publish the project showcase and reproducible examples.
 
 ### Acceptance Criteria
 
 - Each project explains the practical need it addresses.
-- Demonstrations show discovery, payment authorization, settlement, and resource access.
-- At least one demonstration connects independently built projects.
-- Each demonstration includes a refused payment or rejected request.
-- Shared materials contain no private keys or sensitive participant data.
+- Demonstrations show discovery, authorization, settlement, and resource access.
+- At least one demonstration connects independent builder projects.
+- Demonstrations include a policy refusal or rejected request.
+- Shared evidence contains no secret keys or sensitive participant data.
+
+## Evidence and Documentation
+
+Keep documentation aligned with implemented and verified behavior.
+
+Record:
+
+- The tested repository revision.
+- Test results.
+- Manual integration outcomes.
+- Testnet transaction hashes and ledger identifiers.
+- Known limitations.
+- Exercises that still require rehearsal.
+
+Testnet history may become unavailable after a network reset. Preserve observed output alongside transaction identifiers.
 
 ## Delivery Principles
 
 - Use Stellar testnet throughout the program.
 - Keep core exercises runnable with free tooling.
-- Label simulated payments explicitly.
+- Label simulations explicitly.
+- Preserve explicit payment authority.
 - Add meaningful tests alongside implementation changes.
 - Keep commits focused and pull requests reviewable.
+- Distinguish successful demonstrations from broader guarantees.
 - Update documentation when behavior changes.
-- Record verified outcomes separately from planned capabilities.
