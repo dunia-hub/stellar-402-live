@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createBudget } from "../src/stellar/budget.js";
-import { context } from "./helpers/payment-context.js";
+import { context } from "../fixtures/payment-context.js";
 
 const workerPath = fileURLToPath(
   new URL("../fixtures/budget-worker.js", import.meta.url),

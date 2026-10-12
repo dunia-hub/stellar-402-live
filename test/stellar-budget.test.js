@@ -1,4 +1,4 @@
-import { context } from "./helpers/payment-context.js";
+import { context } from "../fixtures/payment-context.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
