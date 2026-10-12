@@ -8,6 +8,7 @@ import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
 import { readClientConfig } from "./client-config.js";
 import { discoverResource } from "./discovery.js";
+import { probeReplay } from "./replay-probe.js";
 import { approvePayment } from "./payment-policy.js";
 import { verifySettlement } from "./verify-settlement.js";
 import { createBudget } from "./budget.js";
@@ -161,6 +162,30 @@ async function main() {
   console.log("Budget reservation settled.");
   console.log("Unlocked resource:");
   console.log(body);
+
+  if (process.env.STELLAR_REPLAY_PROBE === "1") {
+    const result = await probeReplay({
+      url,
+      headers,
+      httpClient,
+      budget,
+      context: {
+        network: approved.accepts[0].network,
+        asset: approved.accepts[0].asset,
+        buyer: signer.address,
+        recipient: approved.accepts[0].payTo,
+      },
+      amountAtomic: approved.accepts[0].amount,
+      originalHash: settlement.transaction,
+    });
+
+    console.log("Replay observation:");
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.budgetStatus === "pending") {
+      console.log("Replay contingency remains reserved for investigation.");
+    }
+  }
 }
 
 main().catch((error) => {
