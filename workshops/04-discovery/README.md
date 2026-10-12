@@ -159,6 +159,19 @@ url: 'http://127.0.0.1:3002/resource'
 
 No payment is made by this command.
 
+## Check the Second Service Before Paying
+
+From your original checkout, with the second service running:
+
+```sh
+STELLAR_SERVICE_ORIGIN=http://127.0.0.1:3002 npm run preflight
+```
+
+Confirm that the configured resource, payment terms, accounts, and budget
+pass before proceeding to payment.
+
+Preflight does not sign or submit a payment.
+
 ## 5. Pay the Second Service
 
 From your original checkout:

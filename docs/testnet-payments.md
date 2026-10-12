@@ -121,6 +121,19 @@ The manifest advertises the `business-checklist` resource at `/resource`.
 
 Discovery cannot approve a recipient, change payment limits, or expand the client’s budget.
 
+## Check Readiness Before Payment
+
+With the service running:
+
+```sh
+npm run preflight
+```
+
+Resolve any reported issue before running the paying client. Preflight
+does not reserve funds or submit payments.
+
+See [Payment Preflight](payment-preflight.md) for the checks and limitations.
+
 ## 7. Complete the Payment
 
 ```sh

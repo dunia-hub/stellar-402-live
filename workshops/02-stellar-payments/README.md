@@ -176,6 +176,19 @@ The live x402 response carries payment requirements in the `PAYMENT-REQUIRED` he
 
 Unlike Session 1, this flow uses the x402 protocol and real testnet USDC.
 
+## Check Readiness Before Payment
+
+With the service running:
+
+```sh
+npm run preflight
+```
+
+Confirm that discovery, payment terms, account funding, trustlines, and
+remaining budget pass the checks.
+
+Preflight does not sign or submit a payment.
+
 ## 8. Complete a Payment
 
 ```sh
