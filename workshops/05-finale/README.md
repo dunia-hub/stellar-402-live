@@ -95,6 +95,19 @@ npm run budget:status
 
 Confirm sufficient funds remain for the demonstration.
 
+## Run Preflight Before the Demonstration
+
+With the target service running:
+
+```sh
+npm run preflight
+```
+
+For another service, configure its origin before running the command.
+
+Resolve reported issues before payment. Preflight does not spend funds
+and does not guarantee successful settlement.
+
 ## 5. Complete the Payment Flow
 
 With the service running:

@@ -152,6 +152,19 @@ Unlocked resource:
 
 See the [testnet payment guide](docs/testnet-payments.md) for account setup and troubleshooting, and the [payment evidence](docs/testnet-evidence.md) for recorded runs.
 
+## Check Readiness Before Paying
+
+With the service running:
+
+```sh
+npm run preflight
+```
+
+Preflight checks discovery, payment terms, accounts, USDC trustlines,
+available funds, and the application budget without signing or paying.
+
+See the [preflight guide](docs/payment-preflight.md) for details.
+
 ## Spending Controls
 
 | Control | Default |
