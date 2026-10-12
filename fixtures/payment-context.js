@@ -1,4 +1,4 @@
-import { TESTNET_USDC } from "../../src/stellar/payment-policy.js";
+import { TESTNET_USDC } from "../src/stellar/payment-policy.js";
 
 export const context = {
   network: "stellar:testnet",
