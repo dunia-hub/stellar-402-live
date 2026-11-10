@@ -13,6 +13,11 @@ import { approvePayment } from "./payment-policy.js";
 import { verifySettlement } from "./verify-settlement.js";
 import { createBudget } from "./budget.js";
 import { budgetPath } from "./budget-location.js";
+import {
+  createPaymentProposal,
+  formatPaymentReview,
+  reviewPayment,
+} from "./payment-review.js";
 
 async function main() {
   const config = readClientConfig();
@@ -69,6 +74,34 @@ async function main() {
   const budget = createBudget({
     path: budgetPath(signer.address),
   });
+
+  const budgetState = budget.snapshot();
+  const proposal = createPaymentProposal({
+    serviceOrigin: origin,
+    resource,
+    recipient: config.recipient,
+    network: approved.accepts[0].network,
+    asset: approved.accepts[0].asset,
+    amountAtomic: approved.accepts[0].amount,
+    remainingBudgetAtomic: budgetState.remainingAtomic,
+  });
+
+  console.log(formatPaymentReview(proposal));
+
+  const review = await reviewPayment(proposal, {
+    autoPayPolicy: config.autoPayPolicy,
+  });
+
+  if (review.decision !== "approved") {
+    console.log("Payment rejected. No payload signed, funds reserved, or payment submitted.");
+    return;
+  }
+
+  if (review.automatic) {
+    console.log("Payment approved automatically within the configured policy.");
+  } else {
+    console.log("Payment approved.");
+  }
 
   const reservation = budget.reserve(
     approved.accepts[0].amount,

@@ -1,7 +1,9 @@
 import { readConfig } from "./config.js";
+import { readAutoPayPolicy } from "./payment-review.js";
 
 export function readClientConfig(env = process.env) {
   const config = readConfig(env);
+  const autoPayPolicy = readAutoPayPolicy(env);
 
   const origin = new URL(
     env.STELLAR_SERVICE_ORIGIN ??
@@ -42,5 +44,6 @@ export function readClientConfig(env = process.env) {
     ...config,
     serviceOrigin: origin.origin,
     resourceId,
+    autoPayPolicy,
   });
 }
